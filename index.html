@@ -1,152 +1,1507 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Barcode Scanner POS</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-https://unpkg.com/html5-qrcodescript>
+    <title>Barcode Scanner POS</title>
 
-<style>
-body{
-    font-family:Arial,sans-serif;
-    background:#f1f3f6;
-    padding:20px;
-    margin:0;
-    text-align:center;
-}
+    <!-- Barcode Scanner Library -->
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 
-h1{
-    color:#222;
-}
+    <style>
+        * {
+            box-sizing: border-box;
+        }
 
-#reader{
-    width:100%;
-    max-width:500px;
-    margin:auto;
-    border:3px solid #333;
-    border-radius:10px;
-    overflow:hidden;
-    background:#fff;
-}
+        body {
+            font-family: Arial, sans-serif;
+            background: #eef1f5;
+            margin: 0;
+            padding: 20px;
+            color: #222;
+        }
 
-.card{
-    background:white;
-    margin:20px auto;
-    max-width:900px;
-    padding:20px;
-    border-radius:12px;
-    box-shadow:0 3px 15px rgba(0,0,0,.15);
-}
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
 
-#barcode{
-    font-size:20px;
-    font-weight:bold;
-}
+        .container {
+            max-width: 1100px;
+            margin: auto;
+        }
 
-#total{
-    font-size:40px;
-    color:green;
-    font-weight:bold;
-}
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1.4fr;
+            gap: 20px;
+        }
 
-table{
-    width:100%;
-    border-collapse:collapse;
-    margin-top:20px;
-}
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 14px;
+            box-shadow: 0 4px 18px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
 
-th,td{
-    border:1px solid #ddd;
-    padding:10px;
-}
+        #reader {
+            width: 100%;
+            max-width: 500px;
+            margin: auto;
+            border: 3px solid #333;
+            border-radius: 12px;
+            overflow: hidden;
+            background: white;
+        }
 
-th{
-    background:#222;
-    color:white;
-}
+        .last-scan {
+            text-align: center;
+            margin-top: 20px;
+        }
 
-button{
-    border:none;
-    border-radius:5px;
-    cursor:pointer;
-    padding:6px 12px;
-    font-size:16px;
-    margin:2px;
-}
+        #barcode {
+            font-size: 20px;
+            font-weight: bold;
+            word-break: break-all;
+            background: #f2f2f2;
+            padding: 12px;
+            border-radius: 8px;
+        }
 
-.plus{
-    background:#28a745;
-    color:white;
-}
+        .total-box {
+            text-align: center;
+            margin: 20px 0;
+        }
 
-.minus{
-    background:#dc3545;
-    color:white;
-}
+        .total-label {
+            font-size: 18px;
+            color: #666;
+        }
 
-.reset{
-    background:#007bff;
-    color:white;
-    padding:12px 25px;
-    font-size:18px;
-    margin-top:15px;
-}
-</style>
+        #total {
+            font-size: 42px;
+            font-weight: bold;
+            color: #198754;
+        }
+
+        .manual {
+            display: flex;
+            gap: 8px;
+            margin-top: 15px;
+        }
+
+        .manual input {
+            flex: 1;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 7px;
+            font-size: 16px;
+        }
+
+        button {
+            border: none;
+            border-radius: 7px;
+            cursor: pointer;
+            padding: 10px 15px;
+            font-size: 15px;
+            transition: 0.2s;
+        }
+
+        button:hover {
+            opacity: 0.85;
+        }
+
+        .primary {
+            background: #007bff;
+            color: white;
+        }
+
+        .success {
+            background: #198754;
+            color: white;
+        }
+
+        .danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .warning {
+            background: #ffc107;
+            color: #222;
+        }
+
+        .dark {
+            background: #343a40;
+            color: white;
+        }
+
+        .reset {
+            width: 100%;
+            padding: 13px;
+            font-size: 17px;
+            margin-top: 10px;
+        }
+
+        .basket-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .item-count {
+            background: #007bff;
+            color: white;
+            padding: 6px 10px;
+            border-radius: 20px;
+            font-size: 14px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        th,
+        td {
+            border-bottom: 1px solid #ddd;
+            padding: 10px 6px;
+            text-align: center;
+        }
+
+        th {
+            background: #222;
+            color: white;
+        }
+
+        .product-name {
+            font-weight: bold;
+        }
+
+        .quantity-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .quantity-controls button {
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            font-weight: bold;
+        }
+
+        .empty {
+            text-align: center;
+            color: #777;
+            padding: 30px;
+        }
+
+        .payment {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px solid #eee;
+        }
+
+        .payment-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin: 10px 0;
+        }
+
+        .payment-row label {
+            width: 120px;
+            font-weight: bold;
+        }
+
+        #change {
+            font-size: 25px;
+            font-weight: bold;
+            color: #198754;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+
+        .status {
+            margin-top: 12px;
+            padding: 10px;
+            border-radius: 7px;
+            text-align: center;
+            display: none;
+        }
+
+        .status.success-status {
+            display: block;
+            background: #d1e7dd;
+            color: #0f5132;
+        }
+
+        .status.error-status {
+            display: block;
+            background: #f8d7da;
+            color: #842029;
+        }
+
+        .products {
+            margin-top: 20px;
+        }
+
+        .product-form {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr auto;
+            gap: 8px;
+        }
+
+        .small {
+            font-size: 13px;
+            color: #777;
+        }
+
+        footer {
+            text-align: center;
+            color: #777;
+            margin-top: 20px;
+            font-size: 13px;
+        }
+
+        @media (max-width: 800px) {
+            body {
+                padding: 10px;
+            }
+
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            table {
+                font-size: 13px;
+            }
+
+            th,
+            td {
+                padding: 7px 3px;
+            }
+
+            .product-form {
+                grid-template-columns: 1fr;
+            }
+
+            .payment-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .payment-row label {
+                width: auto;
+            }
+        }
+
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+
+            #receipt,
+            #receipt * {
+                visibility: visible;
+            }
+
+            #receipt {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 80mm;
+                padding: 5mm;
+                background: white;
+            }
+        }
+
+        #receipt {
+            display: none;
+        }
+    </style>
 </head>
+
 <body>
 
-<h1>📷 Barcode Scanner POS</h1>
+<div class="container">
 
-<div id="reader"></div>
+    <h1>📷 Barcode Scanner POS</h1>
 
-<div class="card">
-    <h2>Last Scan</h2>
-    <div id="barcode">Waiting for scan...</div>
+    <div class="grid">
 
-    <h2>Total</h2>
-    <div id="total">£0.00</div>
+        <!-- LEFT SIDE -->
+        <div>
 
-    <button class="reset" onclick="resetPOS()">Reset Basket</button>
+            <div class="card">
 
-    <table>
-        <thead>
-            <tr>
-                <th>Barcode</th>
-                <th>Price</th>
-                <th>Quantity</th>
-                <th>Subtotal</th>
-                <th>Controls</th>
-            </tr>
-        </thead>
-        <tbody id="items"></tbody>
-    </table>
+                <h2>📷 Scan Product</h2>
+
+                <div id="reader"></div>
+
+                <div class="last-scan">
+
+                    <h3>Last Scan</h3>
+
+                    <div id="barcode">
+                        Waiting for scan...
+                    </div>
+
+                </div>
+
+                <div class="manual">
+
+                    <input
+                        type="text"
+                        id="manualBarcode"
+                        placeholder="Enter barcode manually"
+                        autocomplete="off"
+                    >
+
+                    <button
+                        class="primary"
+                        onclick="manualScan()"
+                    >
+                        Scan
+                    </button>
+
+                </div>
+
+                <div id="status" class="status"></div>
+
+            </div>
+
+            <div class="card">
+
+                <h2>💷 Payment</h2>
+
+                <div class="payment">
+
+                    <div class="payment-row">
+
+                        <label>Total:</label>
+
+                        <strong id="paymentTotal">
+                            £0.00
+                        </strong>
+
+                    </div>
+
+                    <div class="payment-row">
+
+                        <label for="cashReceived">
+                            Cash received:
+                        </label>
+
+                        <input
+                            type="number"
+                            id="cashReceived"
+                            placeholder="0.00"
+                            min="0"
+                            step="0.01"
+                            oninput="calculateChange()"
+                        >
+
+                    </div>
+
+                    <div class="payment-row">
+
+                        <label>Change:</label>
+
+                        <span id="change">
+                            £0.00
+                        </span>
+
+                    </div>
+
+                    <div class="buttons">
+
+                        <button
+                            class="success"
+                            onclick="completeSale()"
+                        >
+                            💰 Complete Sale
+                        </button>
+
+                        <button
+                            class="dark"
+                            onclick="printReceipt()"
+                        >
+                            🧾 Print Receipt
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- RIGHT SIDE -->
+        <div>
+
+            <div class="card">
+
+                <div class="basket-header">
+
+                    <h2>🛒 Basket</h2>
+
+                    <span
+                        class="item-count"
+                        id="itemCount"
+                    >
+                        0 items
+                    </span>
+
+                </div>
+
+                <div class="total-box">
+
+                    <div class="total-label">
+                        TOTAL
+                    </div>
+
+                    <div id="total">
+                        £0.00
+                    </div>
+
+                </div>
+
+                <table>
+
+                    <thead>
+
+                        <tr>
+                            <th>Product</th>
+                            <th>Barcode</th>
+                            <th>Price</th>
+                            <th>Qty</th>
+                            <th>Subtotal</th>
+                            <th>Remove</th>
+                        </tr>
+
+                    </thead>
+
+                    <tbody id="items">
+
+                        <tr>
+                            <td
+                                colspan="6"
+                                class="empty"
+                            >
+                                Basket is empty
+                            </td>
+                        </tr>
+
+                    </tbody>
+
+                </table>
+
+                <button
+                    class="danger reset"
+                    onclick="resetPOS()"
+                >
+                    🔄 New Sale / Clear Basket
+                </button>
+
+            </div>
+
+
+            <!-- PRODUCT DATABASE -->
+            <div class="card products">
+
+                <h2>📦 Product Database</h2>
+
+                <p class="small">
+                    Add products with their barcode, name and price.
+                </p>
+
+                <div class="product-form">
+
+                    <input
+                        type="text"
+                        id="newBarcode"
+                        placeholder="Barcode"
+                    >
+
+                    <input
+                        type="text"
+                        id="newProductName"
+                        placeholder="Product name"
+                    >
+
+                    <input
+                        type="number"
+                        id="newProductPrice"
+                        placeholder="Price (£)"
+                        min="0"
+                        step="0.01"
+                    >
+
+                    <button
+                        class="success"
+                        onclick="addProduct()"
+                    >
+                        Add Product
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <footer>
+        Barcode POS • Products are saved in this browser
+    </footer>
+
 </div>
+
+
+<!-- PRINT RECEIPT -->
+<div id="receipt"></div>
+
 
 <script>
 
+/* =========================================================
+   PRODUCT DATABASE
+   ========================================================= */
+
+const defaultProducts = {
+
+    "5012345678900": {
+        name: "Milk 2 Pints",
+        price: 1.50
+    },
+
+    "5012345678901": {
+        name: "White Bread",
+        price: 1.25
+    },
+
+    "5012345678902": {
+        name: "Coca Cola",
+        price: 1.75
+    },
+
+    "5012345678903": {
+        name: "Chocolate Bar",
+        price: 1.20
+    },
+
+    "5012345678904": {
+        name: "Crisps",
+        price: 1.00
+    },
+
+    "5012345678905": {
+        name: "Orange Juice",
+        price: 2.50
+    }
+
+};
+
+
+/* =========================================================
+   LOAD PRODUCTS
+   ========================================================= */
+
+let products =
+    JSON.parse(localStorage.getItem("posProducts")) ||
+    defaultProducts;
+
+
+/* =========================================================
+   BASKET
+   ========================================================= */
+
 let basket = {};
+
 let lastScan = "";
 
-function randomPrice(){
-    return +(Math.random() * 19 + 1).toFixed(2);
+let saleNumber =
+    Number(localStorage.getItem("saleNumber") || 1);
+
+
+/* =========================================================
+   SAVE PRODUCTS
+   ========================================================= */
+
+function saveProducts() {
+
+    localStorage.setItem(
+        "posProducts",
+        JSON.stringify(products)
+    );
+
 }
 
-function beep(){
 
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+/* =========================================================
+   BEEP
+   ========================================================= */
 
-    const oscillator = ctx.createOscillator();
-    const gain = ctx.createGain();
+function beep() {
 
-    oscillator.connect(gain);
-    gain.connect(ctx.destination);
+    try {
 
-    oscillator.type = "square";
-    oscillator.frequency.value = 1000;
+        const AudioContext =
+            window.AudioContext ||
+            window.webkitAudioContext;
 
-    gain.gain.value = 0.1;
+        if (!AudioContext) return;
 
-    oscillator.start();
+        const ctx = new AudioContext();
 
- 
+        const oscillator =
+            ctx.createOscillator();
+
+        const gain =
+            ctx.createGain();
+
+        oscillator.connect(gain);
+
+        gain.connect(ctx.destination);
+
+        oscillator.type = "square";
+
+        oscillator.frequency.value = 1000;
+
+        gain.gain.value = 0.1;
+
+        oscillator.start();
+
+        oscillator.stop(
+            ctx.currentTime + 0.15
+        );
+
+    } catch (error) {
+
+        console.log("Audio unavailable");
+
+    }
+
+}
+
+
+/* =========================================================
+   SHOW STATUS
+   ========================================================= */
+
+function showStatus(message, type = "success") {
+
+    const status =
+        document.getElementById("status");
+
+    status.textContent = message;
+
+    status.className =
+        "status " +
+        (type === "error"
+            ? "error-status"
+            : "success-status");
+
+    setTimeout(() => {
+
+        status.className = "status";
+
+    }, 3000);
+
+}
+
+
+/* =========================================================
+   HANDLE BARCODE
+   ========================================================= */
+
+function scanSuccess(decodedText) {
+
+    decodedText =
+        String(decodedText).trim();
+
+    if (!decodedText) return;
+
+    if (decodedText === lastScan) {
+        return;
+    }
+
+    lastScan = decodedText;
+
+    setTimeout(() => {
+        lastScan = "";
+    }, 1200);
+
+    addToBasket(decodedText);
+
+}
+
+
+/* =========================================================
+   ADD PRODUCT TO BASKET
+   ========================================================= */
+
+function addToBasket(barcode) {
+
+    document.getElementById("barcode")
+        .textContent = barcode;
+
+    beep();
+
+    if (!products[barcode]) {
+
+        showStatus(
+            "Unknown barcode. Add this product to the database.",
+            "error"
+        );
+
+        document.getElementById("newBarcode")
+            .value = barcode;
+
+        document.getElementById("newProductName")
+            .focus();
+
+        return;
+    }
+
+
+    if (!basket[barcode]) {
+
+        basket[barcode] = {
+            quantity: 1
+        };
+
+    } else {
+
+        basket[barcode].quantity++;
+
+    }
+
+
+    showStatus(
+        products[barcode].name +
+        " added to basket."
+    );
+
+    updateBasket();
+
+}
+
+
+/* =========================================================
+   MANUAL BARCODE
+   ========================================================= */
+
+function manualScan() {
+
+    const input =
+        document.getElementById("manualBarcode");
+
+    const barcode =
+        input.value.trim();
+
+    if (!barcode) {
+
+        showStatus(
+            "Please enter a barcode.",
+            "error"
+        );
+
+        return;
+    }
+
+    addToBasket(barcode);
+
+    input.value = "";
+
+    input.focus();
+
+}
+
+
+/* =========================================================
+   ENTER KEY FOR MANUAL SCANNER
+   ========================================================= */
+
+document
+    .getElementById("manualBarcode")
+    .addEventListener("keydown", function(event) {
+
+        if (event.key === "Enter") {
+
+            manualScan();
+
+        }
+
+    });
+
+
+/* =========================================================
+   UPDATE BASKET
+   ========================================================= */
+
+function updateBasket() {
+
+    const items =
+        document.getElementById("items");
+
+    items.innerHTML = "";
+
+    let total = 0;
+
+    let itemCount = 0;
+
+
+    const barcodes =
+        Object.keys(basket);
+
+
+    if (barcodes.length === 0) {
+
+        items.innerHTML = `
+            <tr>
+                <td colspan="6" class="empty">
+                    Basket is empty
+                </td>
+            </tr>
+        `;
+
+    }
+
+
+    barcodes.forEach(barcode => {
+
+        const product =
+            products[barcode];
+
+        const quantity =
+            basket[barcode].quantity;
+
+        const subtotal =
+            product.price * quantity;
+
+        total += subtotal;
+
+        itemCount += quantity;
+
+
+        const row =
+            document.createElement("tr");
+
+
+        row.innerHTML = `
+
+            <td class="product-name">
+                ${escapeHTML(product.name)}
+            </td>
+
+            <td>
+                ${escapeHTML(barcode)}
+            </td>
+
+            <td>
+                £${product.price.toFixed(2)}
+            </td>
+
+            <td>
+
+                <div class="quantity-controls">
+
+                    <button
+                        class="danger"
+                        onclick="changeQuantity('${escapeAttribute(barcode)}', -1)"
+                    >
+                        −
+                    </button>
+
+                    <strong>
+                        ${quantity}
+                    </strong>
+
+                    <button
+                        class="success"
+                        onclick="changeQuantity('${escapeAttribute(barcode)}', 1)"
+                    >
+                        +
+                    </button>
+
+                </div>
+
+            </td>
+
+            <td>
+                £${subtotal.toFixed(2)}
+            </td>
+
+            <td>
+
+                <button
+                    class="danger"
+                    onclick="removeItem('${escapeAttribute(barcode)}')"
+                >
+                    🗑️
+                </button>
+
+            </td>
+
+        `;
+
+
+        items.appendChild(row);
+
+    });
+
+
+    document.getElementById("total")
+        .textContent =
+        "£" + total.toFixed(2);
+
+
+    document.getElementById("paymentTotal")
+        .textContent =
+        "£" + total.toFixed(2);
+
+
+    document.getElementById("itemCount")
+        .textContent =
+        itemCount +
+        (itemCount === 1 ? " item" : " items");
+
+
+    calculateChange();
+
+}
+
+
+/* =========================================================
+   CHANGE QUANTITY
+   ========================================================= */
+
+function changeQuantity(barcode, amount) {
+
+    if (!basket[barcode]) return;
+
+
+    basket[barcode].quantity += amount;
+
+
+    if (basket[barcode].quantity <= 0) {
+
+        delete basket[barcode];
+
+    }
+
+
+    updateBasket();
+
+}
+
+
+/* =========================================================
+   REMOVE ITEM
+   ========================================================= */
+
+function removeItem(barcode) {
+
+    if (!basket[barcode]) return;
+
+    delete basket[barcode];
+
+    updateBasket();
+
+}
+
+
+/* =========================================================
+   CALCULATE TOTAL
+   ========================================================= */
+
+function getTotal() {
+
+    let total = 0;
+
+
+    Object.keys(basket).forEach(barcode => {
+
+        total +=
+            products[barcode].price *
+            basket[barcode].quantity;
+
+    });
+
+
+    return total;
+
+}
+
+
+/* =========================================================
+   CALCULATE CHANGE
+   ========================================================= */
+
+function calculateChange() {
+
+    const total =
+        getTotal();
+
+    const cash =
+        Number(
+            document.getElementById("cashReceived").value
+        ) || 0;
+
+
+    let change =
+        cash - total;
+
+
+    if (change < 0) {
+
+        change = 0;
+
+    }
+
+
+    document.getElementById("change")
+        .textContent =
+        "£" + change.toFixed(2);
+
+}
+
+
+/* =========================================================
+   COMPLETE SALE
+   ========================================================= */
+
+function completeSale() {
+
+    const total =
+        getTotal();
+
+
+    if (total <= 0) {
+
+        showStatus(
+            "Basket is empty.",
+            "error"
+        );
+
+        return;
+
+    }
+
+
+    const cash =
+        Number(
+            document.getElementById("cashReceived").value
+        ) || 0;
+
+
+    if (cash < total) {
+
+        showStatus(
+            "Not enough cash received.",
+            "error"
+        );
+
+        return;
+
+    }
+
+
+    const change =
+        cash - total;
+
+
+    printReceipt();
+
+
+    showStatus(
+        "Sale #" +
+        saleNumber +
+        " completed. Change: £" +
+        change.toFixed(2)
+    );
+
+
+    saleNumber++;
+
+    localStorage.setItem(
+        "saleNumber",
+        saleNumber
+    );
+
+
+    setTimeout(() => {
+
+        resetPOS();
+
+    }, 1000);
+
+}
+
+
+/* =========================================================
+   RESET POS
+   ========================================================= */
+
+function resetPOS() {
+
+    basket = {};
+
+    lastScan = "";
+
+
+    document.getElementById("barcode")
+        .textContent =
+        "Waiting for scan...";
+
+
+    document.getElementById("cashReceived")
+        .value = "";
+
+
+    document.getElementById("change")
+        .textContent =
+        "£0.00";
+
+
+    updateBasket();
+
+}
+
+
+/* =========================================================
+   ADD PRODUCT
+   ========================================================= */
+
+function addProduct() {
+
+    const barcode =
+        document.getElementById("newBarcode")
+            .value.trim();
+
+
+    const name =
+        document.getElementById("newProductName")
+            .value.trim();
+
+
+    const price =
+        Number(
+            document.getElementById("newProductPrice")
+                .value
+        );
+
+
+    if (!barcode || !name || !price) {
+
+        showStatus(
+            "Please enter barcode, product name and price.",
+            "error"
+        );
+
+        return;
+
+    }
+
+
+    if (price < 0) {
+
+        showStatus(
+            "Price cannot be negative.",
+            "error"
+        );
+
+        return;
+
+    }
+
+
+    products[barcode] = {
+
+        name: name,
+
+        price: Number(price.toFixed(2))
+
+    };
+
+
+    saveProducts();
+
+
+    document.getElementById("newBarcode")
+        .value = "";
+
+    document.getElementById("newProductName")
+        .value = "";
+
+    document.getElementById("newProductPrice")
+        .value = "";
+
+
+    showStatus(
+        name + " added to product database."
+    );
+
+
+    document.getElementById("manualBarcode")
+        .focus();
+
+}
+
+
+/* =========================================================
+   PRINT RECEIPT
+   ========================================================= */
+
+function printReceipt() {
+
+    const total =
+        getTotal();
+
+
+    if (total <= 0) {
+
+        showStatus(
+            "Cannot print an empty receipt.",
+            "error"
+        );
+
+        return;
+
+    }
+
+
+    const cash =
+        Number(
+            document.getElementById("cashReceived").value
+        ) || 0;
+
+
+    const change =
+        Math.max(0, cash - total);
+
+
+    let receiptHTML = `
+
+        <div style="text-align:center">
+
+            <h2>MY SHOP</h2>
+
+            <p>
+                Barcode POS
+            </p>
+
+            <p>
+                Sale #${saleNumber}
+            </p>
+
+            <hr>
+
+        </div>
+
+    `;
+
+
+    Object.keys(basket).forEach(barcode => {
+
+        const product =
+            products[barcode];
+
+        const quantity =
+            basket[barcode].quantity;
+
+        const subtotal =
+            product.price * quantity;
+
+
+        receiptHTML += `
+
+            <div style="
+                display:flex;
+                justify-content:space-between;
+                margin:5px 0;
+            ">
+
+                <span>
+                    ${escapeHTML(product.name)}
+                    x${quantity}
+                </span>
+
+                <span>
+                    £${subtotal.toFixed(2)}
+                </span>
+
+            </div>
+
+        `;
+
+    });
+
+
+    receiptHTML += `
+
+        <hr>
+
+        <div style="
+            display:flex;
+            justify-content:space-between;
+            font-weight:bold;
+        ">
+
+            <span>TOTAL</span>
+
+            <span>£${total.toFixed(2)}</span>
+
+        </div>
+
+        <div style="
+            display:flex;
+            justify-content:space-between;
+        ">
+
+            <span>Cash</span>
+
+            <span>£${cash.toFixed(2)}</span>
+
+        </div>
+
+        <div style="
+            display:flex;
+            justify-content:space-between;
+        ">
+
+            <span>Change</span>
+
+            <span>£${change.toFixed(2)}</span>
+
+        </div>
+
+        <hr>
+
+        <div style="text-align:center">
+
+            <p>Thank you!</p>
+
+            <p>
+                ${new Date().toLocaleString()}
+            </p>
+
+        </div>
+
+    `;
+
+
+    const receipt =
+        document.getElementById("receipt");
+
+
+    receipt.innerHTML =
+        receiptHTML;
+
+
+    receipt.style.display =
+        "block";
+
+
+    window.print();
+
+
+    setTimeout(() => {
+
+        receipt.style.display =
+            "none";
+
+    }, 1000);
+
+}
+
+
+/* =========================================================
+   HTML SAFETY
+   ========================================================= */
+
+function escapeHTML(value) {
+
+    return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+
+}
+
+
+function escapeAttribute(value) {
+
+    return String(value)
+        .replace(/\\/g, "\\\\")
+        .replace(/'/g, "\\'");
+
+}
+
+
+/* =========================================================
+   START BARCODE SCANNER
+   ========================================================= */
+
+const scanner =
+    new Html5QrcodeScanner(
+        "reader",
+        {
+            fps: 10,
+
+            qrbox: {
+                width: 280,
+                height: 160
+            },
+
+            rememberLastUsedCamera: true
+        },
+
+        false
+    );
+
+
+scanner.render(
+    scanSuccess,
+    function(errorMessage) {
+
+        // Scanner errors are normally harmless.
+        // They are intentionally not displayed.
+
+    }
+);
+
+
+/* =========================================================
+   INITIAL DISPLAY
+   ========================================================= */
+
+updateBasket();
+
+</script>
+
+</body>
+</html>
+
