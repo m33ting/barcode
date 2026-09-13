@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Barcode Random Price Scanner</title>
+
+<script src="https://unpkg.com/@zxing/library@0.21.3"></script>
+
+<style>
+*{box-sizing:border-box}
+body{
+  font-family:Arial,sans-serif;
+  margin:0;
+  background:#f3f4f6;
+  color:#111827
+}
+header{
+  background:#0b6cff;
+  color:#fff;
+  padding:14px;
+  text-align:center
+}
+.wrap{
+  max-width:900px;
+  margin:auto;
+  padding:15px
+}
+.card{
+  background:#fff;
+  padding:15px;
+  border-radius:12px;
+  margin-bottom:15px;
+  box-shadow:0 2px 10px rgba(0,0,0,.08)
+}
+video{
+  width:100%;
+  max-height:430px;
+  min-height:260px;
+  object-fit:cover;
+  background:#000;
+  border-radius:8px
+}
+.scannerBox{
+  position:relative
+}
+.scanLine{
+  position:absolute;
+  left:10%;
+  right:10%;
+  top:50%;
+  height:3px;
+  background:#22c55e;
+  box-shadow:0 0 8px #22c55e;
+  pointer-events:none
+}
+button{
+  padding:10px 14px;
+  margin:5px 5px 5px 0;
+  border:0;
+  border-radius:7px;
+  background:#0b6cff;
+  color:white;
+  font-size:15px;
+  cursor:pointer
+}
+button.secondary{background:#555}
+button.danger{background:#c62828}
+.status{
+  margin-top:10px;
+  padding:10px;
+  border-radius:7px;
+  background:#eef2ff
+}
+.last{
+  margin-top:10px;
+  font-size:18px;
+  font-weight:bold
+}
+table{
+  width:100%;
+  border-collapse:collapse
+}
+th,td{
+  border:1px solid #ddd;
+  padding:9px;
+  text-align:left
+}
+th{background:#f5f5f5}
+.price{font-weight:bold}
+.total{
+  font-size:26px;
+  font-weight:bold;
+  margin-top:15px
+}
+.empty{text-align:center;color:#777}
+.note{
+  font-size:13px;
+  color:#666;
+  line-height:1.5
+}
+</style>
+</head>
+
+<body>
+<header>
+  <h1>📷 Barcode Random Price Scanner</h1>
+</header>
+
+<div class="wrap">
+
+  <div class="card">
+    <h2>Camera Scanner</h2>
+
+    <div class="scannerBox">
+      <video id="video" autoplay muted playsinline></video>
+      <div class="scanLine"></div>
+    </div>
+
+    <button onclick="startScanner()">Start Scanner</button>
+    <button class="secondary" onclick="stopScanner()">Stop Scanner</button>
+    <button class="secondary" onclick="switchCamera()">Switch Camera</button>
+    <button class="danger" onclick="clearItems()">Clear Items</button>
+
+    <div id="status" class="status">Ready — press Start Scanner.</div>
+
+    <div class="last">
+      Last barcode: <span id="lastBarcode">None</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Scanned Items</h2>
+
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Barcode</th>
+          <th>Random Price</th>
+        </tr>
+      </thead>
+      <tbody id="cart">
+        <tr>
+          <td colspan="3" class="empty">No barcodes scanned yet.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="total">
+      Total: £<span id="grandTotal">0.00</span>
+    </div>
+
+    <p>Items scanned: <span id="count">0</span></p>
+  </div>
+
+  <div class="card">
+    <strong>How it works</strong>
+    <p class="note">
+      Every time a new barcode is detected, the scanner adds that barcode to
+      the list and generates a random price between £0.50 and £50.00.
+      The same barcode can be scanned again after it leaves the camera view.
+    </p>
+    <p class="note">
+      Camera access normally requires HTTPS or localhost. This version uses
+      ZXing, following the scanner approach in the code you provided.
+    </p>
+  </div>
+
+</div>
+
+<script>
+/*
+  This scanner deliberately follows the structure of the supplied example:
+  ZXing.BrowserMultiFormatReader()
+  -> listVideoInputDevices()
+  -> decodeFromVideoDevice(...)
+*/
+
+const reader = new ZXing.BrowserMultiFormatReader();
+
+let cameras = [];
+let currentCamera = 0;
+let scannerRunning = false;
+
+// Used to stop the same barcode being added repeatedly while it remains
+// in front of the camera.
+let barcodeVisible = false;
+let lastBarcode = null;
+
+let cart = [];
+
+const statusEl = document.getElementById("status");
+const cartEl = document.getElementById("cart");
+const countEl = document.getElementById("count");
+const totalEl = document.getElementById("grandTotal");
+const lastBarcodeEl = document.getElementById("lastBarcode");
+
+function randomPrice(){
+  // £0.50 through £50.00, rounded to pennies.
+  return Math.floor((0.50 + Math.random() * 49.50) * 100) / 100;
+}
+
+function render(){
+  cartEl.innerHTML = "";
+
+  let total = 0;
+
+  if(cart.length === 0){
+    cartEl.innerHTML =
+      '<tr><td colspan="3" class="empty">No barcodes scanned yet.</td></tr>';
+  }
+
+  cart.forEach((item,index) => {
+    total += item.price;
+
+    const row = document.createElement("tr");
+
+    const numberCell = document.createElement("td");
+    numberCell.textContent = index + 1;
+
+    const codeCell = document.createElement("td");
+    codeCell.textContent = item.code;
+
+    const priceCell = document.createElement("td");
+    priceCell.textContent = "£" + item.price.toFixed(2);
+    priceCell.className = "price";
+
+    row.appendChild(numberCell);
+    row.appendChild(codeCell);
+    row.appendChild(priceCell);
+
+    cartEl.appendChild(row);
+  });
+
+  countEl.textContent = cart.length;
+  totalEl.textContent = total.toFixed(2);
+}
+
+function addBarcode(code){
+  // Prevent duplicate detections while the barcode is still visible.
+  if(barcodeVisible && code === lastBarcode){
+    return;
+  }
+
+  barcodeVisible = true;
+  lastBarcode = code;
+
+  const price = randomPrice();
+
+  cart.push({
+    code: code,
+    price: price
+  });
+
+  lastBarcodeEl.textContent = code;
+
+  statusEl.textContent =
+    "Scanned " + code + " — random price £" + price.toFixed(2);
+
+  render();
+
+  beep();
+}
+
+function beep(){
+  // Browser-generated beep; no external sound file is required.
+  try{
+    const AudioContext =
+      window.AudioContext || window.webkitAudioContext;
+
+    if(!AudioContext) return;
+
+    const audio = new AudioContext();
+    const oscillator = audio.createOscillator();
+    const gain = audio.createGain();
+
+    oscillator.frequency.value = 880;
+    gain.gain.value = 0.04;
+
+    oscillator.connect(gain);
+    gain.connect(audio.destination);
+
+    oscillator.start();
+
+    setTimeout(() => {
+      oscillator.stop();
+      audio.close();
+    }, 90);
+  }catch(e){}
+}
+
+async function startScanner(){
+  if(scannerRunning){
+    statusEl.textContent = "Scanner is already running.";
+    return;
+  }
+
+  try{
+    statusEl.textContent = "Finding cameras...";
+
+    cameras = await reader.listVideoInputDevices();
+
+    if(!cameras.length){
+      statusEl.textContent =
+        "No camera found. Check that your computer has a camera.";
+      return;
+    }
+
+    // Prefer a back/environment camera when a device label gives us a clue.
+    const preferred = cameras.findIndex(camera =>
+      /back|rear|environment|world/i.test(camera.label)
+    );
+
+    if(preferred >= 0){
+      currentCamera = preferred;
+    }else if(currentCamera >= cameras.length){
+      currentCamera = 0;
+    }
+
+    runCamera();
+
+  }catch(error){
+    console.error(error);
+
+    statusEl.textContent =
+      "Could not access the camera. Allow camera permission, then try again.";
+  }
+}
+
+function runCamera(){
+  if(!cameras.length) return;
+
+  scannerRunning = true;
+  barcodeVisible = false;
+  lastBarcode = null;
+
+  statusEl.textContent =
+    "Scanner running — Camera " + (currentCamera + 1);
+
+  reader.decodeFromVideoDevice(
+    cameras[currentCamera].deviceId,
+    "video",
+    (result, error) => {
+
+      if(result){
+        const code = result.getText();
+
+        if(code){
+          addBarcode(code);
+        }
+
+      }else{
+        // Once ZXing no longer sees a result, allow that barcode to be
+        // scanned again when it comes back into view.
+        barcodeVisible = false;
+        lastBarcode = null;
+      }
+    }
+  );
+}
+
+function switchCamera(){
+  if(!cameras.length){
+    statusEl.textContent = "Start the scanner first.";
+    return;
+  }
+
+  if(cameras.length < 2){
+    statusEl.textContent = "Only one camera is available.";
+    return;
+  }
+
+  try{
+    reader.reset();
+  }catch(e){}
+
+  scannerRunning = false;
+  barcodeVisible = false;
+  lastBarcode = null;
+
+  currentCamera = (currentCamera + 1) % cameras.length;
+
+  runCamera();
+}
+
+function stopScanner(){
+  try{
+    reader.reset();
+  }catch(e){}
+
+  scannerRunning = false;
+  barcodeVisible = false;
+  lastBarcode = null;
+
+  statusEl.textContent = "Scanner stopped.";
+}
+
+function clearItems(){
+  cart = [];
+  barcodeVisible = false;
+  lastBarcode = null;
+  lastBarcodeEl.textContent = "None";
+
+  render();
+
+  statusEl.textContent =
+    scannerRunning
+      ? "Items cleared — scanner is still running."
+      : "Items cleared.";
+}
+
+render();
+</script>
+
+</body>
+</html>
