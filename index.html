@@ -3,56 +3,61 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Barcode Scanner Till</title>
+<title>Barcode Scanner POS</title>
 
 https://unpkg.com/html5-qrcodescript>
 
 <style>
 body{
     font-family:Arial,sans-serif;
-    background:#f4f4f4;
-    text-align:center;
-    margin:0;
+    background:#f1f3f6;
     padding:20px;
+    margin:0;
+    text-align:center;
 }
 
 h1{
-    color:#333;
+    color:#222;
 }
 
 #reader{
     width:100%;
     max-width:500px;
-    margin:20px auto;
+    margin:auto;
     border:3px solid #333;
     border-radius:10px;
     overflow:hidden;
-    background:white;
+    background:#fff;
 }
 
-.info{
+.card{
     background:white;
-    max-width:700px;
-    margin:auto;
-    padding:15px;
-    border-radius:10px;
-    box-shadow:0 2px 10px rgba(0,0,0,0.15);
+    margin:20px auto;
+    max-width:900px;
+    padding:20px;
+    border-radius:12px;
+    box-shadow:0 3px 15px rgba(0,0,0,.15);
+}
+
+#barcode{
+    font-size:20px;
+    font-weight:bold;
 }
 
 #total{
-    font-size:32px;
+    font-size:40px;
     color:green;
     font-weight:bold;
 }
 
 table{
     width:100%;
-    margin-top:15px;
     border-collapse:collapse;
+    margin-top:20px;
 }
 
 th,td{
-    border:1px solid #ccc;
+    border:1px solid #ddd;
     padding:10px;
 }
 
@@ -62,33 +67,56 @@ th{
 }
 
 button{
-    padding:10px 20px;
-    font-size:16px;
-    margin-top:15px;
+    border:none;
+    border-radius:5px;
     cursor:pointer;
+    padding:6px 12px;
+    font-size:16px;
+    margin:2px;
+}
+
+.plus{
+    background:#28a745;
+    color:white;
+}
+
+.minus{
+    background:#dc3545;
+    color:white;
+}
+
+.reset{
+    background:#007bff;
+    color:white;
+    padding:12px 25px;
+    font-size:18px;
+    margin-top:15px;
 }
 </style>
 </head>
 <body>
 
-<h1>📷 Barcode Scanner Checkout</h1>
+<h1>📷 Barcode Scanner POS</h1>
 
 <div id="reader"></div>
 
-<div class="info">
-    <h2>Last Barcode</h2>
-    <p id="barcode">None</p>
+<div class="card">
+    <h2>Last Scan</h2>
+    <div id="barcode">Waiting for scan...</div>
 
     <h2>Total</h2>
     <div id="total">£0.00</div>
 
-    <button onclick="resetScanner()">Reset</button>
+    <button class="reset" onclick="resetPOS()">Reset Basket</button>
 
     <table>
         <thead>
             <tr>
                 <th>Barcode</th>
-                <th>Random Price</th>
+                <th>Price</th>
+                <th>Quantity</th>
+                <th>Subtotal</th>
+                <th>Controls</th>
             </tr>
         </thead>
         <tbody id="items"></tbody>
@@ -96,71 +124,29 @@ button{
 </div>
 
 <script>
-let total = 0;
-let scannedItems = {};
+
+let basket = {};
 let lastScan = "";
 
-function randomPrice() {
-    return (Math.random() * 19 + 1).toFixed(2);
+function randomPrice(){
+    return +(Math.random() * 19 + 1).toFixed(2);
 }
 
-function updateTotal(){
-    document.getElementById("total").textContent =
-        "£" + total.toFixed(2);
-}
+function beep(){
 
-function onScanSuccess(decodedText) {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
 
-    if(decodedText === lastScan){
-        return;
-    }
+    const oscillator = ctx.createOscillator();
+    const gain = ctx.createGain();
 
-    lastScan = decodedText;
+    oscillator.connect(gain);
+    gain.connect(ctx.destination);
 
-    setTimeout(() => {
-        lastScan = "";
-    }, 1500);
+    oscillator.type = "square";
+    oscillator.frequency.value = 1000;
 
-    document.getElementById("barcode").textContent = decodedText;
+    gain.gain.value = 0.1;
 
-    if(!scannedItems[decodedText]){
+    oscillator.start();
 
-        let price = parseFloat(randomPrice());
-
-        scannedItems[decodedText] = price;
-
-        total += price;
-        updateTotal();
-
-        const row = document.createElement("tr");
-        row.innerHTML = `
-            <td>${decodedText}</td>
-            <td>£${price.toFixed(2)}</td>
-        `;
-
-        document.getElementById("items").appendChild(row);
-    }
-}
-
-function resetScanner(){
-    total = 0;
-    scannedItems = {};
-    document.getElementById("items").innerHTML = "";
-    document.getElementById("barcode").textContent = "None";
-    updateTotal();
-}
-
-const html5QrCode = new Html5QrcodeScanner(
-    "reader",
-    {
-        fps: 10,
-        qrbox: { width: 250, height: 250 }
-    },
-    false
-);
-
-html5QrCode.render(onScanSuccess);
-</script>
-
-</body>
-</html>
+ 
